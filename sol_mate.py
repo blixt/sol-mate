@@ -8,10 +8,10 @@ import pytz
 from fastapi import FastAPI
 from fastapi.responses import HTMLResponse
 
-from modal import Image, Stub, asgi_app
+from modal import App, Image, asgi_app
 
 image = Image.debian_slim().pip_install("ephem", "pytz", "requests")
-stub = Stub("sol-mate", image=image)
+app = App("sol-mate", image=image)
 
 web_app = FastAPI()
 
@@ -203,13 +203,13 @@ def get_privacy_policy():
     return HTMLResponse(textwrap.dedent(html))
 
 
-@stub.function()
+@app.function()
 @asgi_app()
 def weather_api():
     return web_app
 
 
-@stub.local_entrypoint()
+@app.local_entrypoint()
 def main():
     import requests
 
