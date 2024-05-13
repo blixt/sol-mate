@@ -213,12 +213,22 @@ def weather_api():
 def main():
     import requests
 
+    # New York
     params = {
         "latitude": 40.7128,
         "longitude": -74.006,
         "timezone": "America/New_York",
         "temperature_unit": "fahrenheit",
     }
+
+    # Barcelona
+    # params = {
+    #     "latitude": 41.3851,
+    #     "longitude": 2.1734,
+    #     "timezone": "Europe/Madrid",
+    #     "temperature_unit": "celsius",
+    # }
+
     print(f"The weather for {params}:")
 
     api_url = "https://blixt--sol-mate-weather-api-dev.modal.run/current"
