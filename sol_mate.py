@@ -10,6 +10,9 @@ from fastapi.responses import HTMLResponse
 
 from modal import App, Image, asgi_app
 
+from tz import tz_abbreviation_map
+
+
 image = Image.debian_slim().pip_install("ephem", "pytz", "requests")
 app = App("sol-mate", image=image)
 
@@ -161,6 +164,7 @@ def get_weather(
     units = data["current_units"]
 
     cloud_cover = values["cloud_cover"] / 100
+    timezone = tz_abbreviation_map.get(timezone, timezone)
     local_time = datetime.now(pytz.timezone(timezone))
 
     conditions = [

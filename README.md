@@ -8,13 +8,13 @@ The output has been specifically formatted in a way that helps GPT visually desc
 
 Make sure you have Modal installed:
 
-```
+```sh
 pip install modal
 ```
 
 Then, install the dependencies:
 
-```
+```sh
 pip install ephem pytz requests
 ```
 
@@ -24,7 +24,7 @@ For now you'll need to update `blixt` in the code to your own username.
 
 And finally you can run it to see that it works:
 
-```
+```sh
 $ modal run sol_mate.py
 ✓ Initialized. View run at https://modal.com/blixt/apps/ap-NbqYUrhnWHuqB8itLCIcGE
 ✓ Created objects.
