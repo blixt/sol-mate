@@ -1,6 +1,6 @@
 import math
 import textwrap
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Dict, List
 
 import ephem
@@ -13,7 +13,11 @@ from modal import App, Image, asgi_app
 from tz import tz_abbreviation_map
 
 
-image = Image.debian_slim().pip_install("ephem", "pytz", "requests")
+image = (
+    Image.debian_slim(python_version="3.12")
+    .pip_install("ephem", "pytz", "requests")
+    .add_local_python_source("tz")
+)
 app = App("sol-mate", image=image)
 
 web_app = FastAPI()
@@ -55,9 +59,9 @@ def describe_sun_and_moon(
 ) -> List[str | None]:
     observer = ephem.Observer()
     observer.lat, observer.lon = str(latitude), str(longitude)
-    observer.date = datetime.utcnow()
+    observer.date = datetime.now(timezone.utc)
 
-    sun = ephem.Sun(observer)
+    sun = ephem.Sun(observer)  # type: ignore
     moon = ephem.Moon(observer)
 
     # Convert celestial bodies' altitude to degrees
@@ -168,9 +172,9 @@ def get_weather(
     local_time = datetime.now(pytz.timezone(timezone))
 
     conditions = [
-        f'Temperature: {round(values["temperature_2m"])}{units["temperature_2m"]}',
-        f'Weather condition: {weather_codes.get(values["weather_code"], "Unknown")}',
-        f'The local time is {local_time.strftime("%H:%M")} on a {local_time.strftime("%A in %B")}.',
+        f"Temperature: {round(values['temperature_2m'])}{units['temperature_2m']}",
+        f"Weather condition: {weather_codes.get(values['weather_code'], 'Unknown')}",
+        f"The local time is {local_time.strftime('%H:%M')} on a {local_time.strftime('%A in %B')}.",
         *describe_sun_and_moon(latitude, longitude, cloud_cover),
         describe_clouds(cloud_cover),
         describe_wind(values["wind_speed_10m"]),
