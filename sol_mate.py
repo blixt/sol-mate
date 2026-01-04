@@ -54,6 +54,37 @@ weather_codes = {
 }
 
 
+def describe_position(alt_deg: float, az_deg: float) -> str:
+    """Describe position in sky using altitude and azimuth."""
+    # Compass direction from azimuth
+    if az_deg < 22.5 or az_deg >= 337.5:
+        direction = "to the north"
+    elif az_deg < 67.5:
+        direction = "to the northeast"
+    elif az_deg < 112.5:
+        direction = "to the east"
+    elif az_deg < 157.5:
+        direction = "to the southeast"
+    elif az_deg < 202.5:
+        direction = "to the south"
+    elif az_deg < 247.5:
+        direction = "to the southwest"
+    elif az_deg < 292.5:
+        direction = "to the west"
+    else:
+        direction = "to the northwest"
+
+    # Height in sky from altitude
+    if alt_deg >= 75:
+        return "nearly overhead"
+    elif alt_deg >= 45:
+        return f"high in the sky {direction}"
+    elif alt_deg >= 20:
+        return f"mid-sky {direction}"
+    else:
+        return f"low on the horizon {direction}"
+
+
 def describe_sun_and_moon(
     latitude: float, longitude: float, cloud_cover: float
 ) -> tuple[str, str | None]:
@@ -64,8 +95,9 @@ def describe_sun_and_moon(
     sun = ephem.Sun(observer)  # type: ignore
     moon = ephem.Moon(observer)
 
-    # Convert celestial bodies' altitude to degrees
+    # Convert celestial bodies' positions to degrees
     sun_alt_deg = sun.alt * (180.0 / math.pi)
+    sun_az_deg = sun.az * (180.0 / math.pi)
 
     # Sun status
     sun_status = "It is dark."
@@ -76,32 +108,46 @@ def describe_sun_and_moon(
     elif -6 < sun_alt_deg < 0:
         sun_status = "It is the blue hour."
     elif 0 <= sun_alt_deg <= 6:
-        sun_status = "It is the golden hour."
+        sun_position = describe_position(sun_alt_deg, sun_az_deg)
+        sun_status = f"It is the golden hour, with the sun {sun_position}."
     elif sun_alt_deg > 6:
+        sun_position = describe_position(sun_alt_deg, sun_az_deg)
         if cloud_cover >= 0.9:
-            sun_status = "The sun is hidden behind clouds."
-        elif sun_alt_deg > 20:
-            sun_status = "The sun is high in the sky."
+            sun_status = f"The sun is {sun_position}, hidden behind clouds."
         else:
-            sun_status = "The sun is low in the sky."
+            sun_status = f"The sun is {sun_position}."
 
     # Moon status
     moon_status = None
     if sun_alt_deg <= -6:
-        moon_phase = observer.date - ephem.previous_new_moon(observer.date)
+        moon_phase_days = observer.date - ephem.previous_new_moon(observer.date)
         moon_alt_deg = moon.alt * (180.0 / math.pi)
-        if moon_alt_deg > 0 and cloud_cover >= 0.9:
-            if sun_alt_deg < -12:
-                moon_status = "The moon is shining through the clouds."
-        elif moon_alt_deg > 0:
-            if moon_phase < 3 or moon_phase > 25:
-                moon_status = "A crescent moon is visible in the sky."
-            elif 7 < moon_phase < 22:
-                moon_status = "A gibbous moon is visible in the sky."
-            elif 13 < moon_phase < 15:
-                moon_status = "A full moon is visible in the sky."
+        moon_az_deg = moon.az * (180.0 / math.pi)
+
+        # Determine phase name (lunar cycle ~29.5 days)
+        if moon_phase_days < 1.85:
+            phase_name = "new moon"
+        elif moon_phase_days < 7.4:
+            phase_name = "waxing crescent moon"
+        elif moon_phase_days < 9.2:
+            phase_name = "first quarter moon"
+        elif moon_phase_days < 14.8:
+            phase_name = "waxing gibbous moon"
+        elif moon_phase_days < 16.6:
+            phase_name = "full moon"
+        elif moon_phase_days < 22.1:
+            phase_name = "waning gibbous moon"
+        elif moon_phase_days < 23.9:
+            phase_name = "last quarter moon"
+        else:
+            phase_name = "waning crescent moon"
+
+        if moon_alt_deg > 0:
+            moon_position = describe_position(moon_alt_deg, moon_az_deg)
+            if cloud_cover >= 0.9 and sun_alt_deg < -12:
+                moon_status = f"A {phase_name} is {moon_position}, shining through the clouds."
             else:
-                moon_status = "The moon is visible in the sky."
+                moon_status = f"A {phase_name} is {moon_position}."
 
     return (sun_status, moon_status)
 
