@@ -6,38 +6,27 @@ The output has been specifically formatted in a way that helps GPT visually desc
 
 ## Running it
 
-Make sure you have Modal installed:
+Make sure you have [uv](https://docs.astral.sh/uv/) installed, then:
 
 ```sh
-pip install modal
+uv sync
+uv run modal run sol_mate.py
 ```
 
-Then, install the dependencies:
+Example output:
 
-```sh
-pip install ephem pytz requests
 ```
-
-(You may use a virtual environment for this, up to you.)
-
-For now you'll need to update `blixt` in the code to your own username.
-
-And finally you can run it to see that it works:
-
-```sh
-$ modal run sol_mate.py
-✓ Initialized. View run at https://modal.com/blixt/apps/ap-NbqYUrhnWHuqB8itLCIcGE
+✓ Initialized.
 ✓ Created objects.
-├── 🔨 Created mount /Users/blixt/src/sol-mate/sol_mate.py
-└── 🔨 Created weather_api => https://blixt--sol-mate-weather-api-dev.modal.run
-The weather for {'latitude': 40.7128, 'longitude': -74.006, 'timezone': 'America/New_York', 'temperature_unit': 'fahrenheit'}:
-Temperature: 46°F
-Weather condition: overcast
-The local time is 13:06 on a Thursday in April.
-The sun is hidden behind clouds.
-The sky is completely overcast.
-A moderate breeze is blowing.
-Stopping app - local entrypoint completed.
-    GET /current -> 200 OK  (duration: 4.27 s, execution: 418.0 ms)
-✓ App completed. View run at https://modal.com/blixt/apps/ap-NbqYUrhnWHuqB8itLCIcGE
+├── 🔨 Created mount sol_mate.py
+├── 🔨 Created mount PythonPackage:tz
+└── 🔨 Created web function weather_api
+The weather for {'latitude': 40.7128, 'longitude': -74.006, ...}:
+Temperature: 34°F
+Weather condition: mainly clear
+The local time is 12:34 on a Sunday in January.
+The sun is high in the sky.
+The sky is partly cloudy.
+There's a light breeze gently blowing.
+✓ App completed.
 ```

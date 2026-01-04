@@ -1,0 +1,12 @@
+[project]
+name = "sol-mate"
+version = "0.1.0"
+description = "Weather service for Sol Mate GPT"
+requires-python = ">=3.10"
+dependencies = [
+    "modal",
+    "ephem",
+    "pytz",
+    "fastapi",
+    "requests",
+]
