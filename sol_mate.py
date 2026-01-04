@@ -119,15 +119,28 @@ def describe_clouds(cloud_cover: float) -> str:
         return "The sky is completely overcast."
 
 
-def describe_snow(snow_depth: float) -> str | None:
-    if snow_depth == 0:
-        return None
-    elif snow_depth < 0.01:
-        return "There is a light dusting of snow on the ground."
-    elif snow_depth < 0.1:
-        return "There is snow on the ground."
-    else:
+def describe_ground(
+    soil_moisture: float, recent_rain: float, snow_depth: float
+) -> str | None:
+    # Snow conditions take priority
+    if snow_depth >= 0.1:
         return "There is a thick layer of snow on the ground."
+    if snow_depth >= 0.01:
+        return "There is snow on the ground."
+    if snow_depth > 0:
+        return "There is a light dusting of snow on the ground."
+    # Rain and moisture conditions
+    if recent_rain > 5:
+        return "The ground is wet from recent rain."
+    if recent_rain > 0.5:
+        return "The ground is damp from recent rain."
+    if soil_moisture > 0.35:
+        return "The ground is muddy and waterlogged."
+    if soil_moisture > 0.25:
+        return "The ground is damp."
+    if soil_moisture < 0.1:
+        return "The ground is dry and dusty."
+    return None
 
 
 def describe_wind(wind_speed: float) -> str | None:
@@ -155,7 +168,10 @@ def get_weather(
         "latitude": latitude,
         "longitude": longitude,
         "timezone": timezone,
-        "current": "temperature_2m,snow_depth,weather_code,cloud_cover,wind_speed_10m",
+        "current": "temperature_2m,snow_depth,weather_code,cloud_cover,wind_speed_10m,soil_moisture_0_to_1cm",
+        "hourly": "rain,showers",
+        "past_hours": 6,
+        "forecast_hours": 0,
         "temperature_unit": temperature_unit,
         "wind_speed_unit": "kmh",
         "precipitation_unit": "mm",
@@ -166,11 +182,15 @@ def get_weather(
 
     values = data["current"]
     units = data["current_units"]
+    hourly = data.get("hourly", {})
 
     cloud_cover = values["cloud_cover"] / 100
+    soil_moisture = values.get("soil_moisture_0_to_1cm", 0.15)
+    recent_rain = sum(hourly.get("rain", [])) + sum(hourly.get("showers", []))
     timezone = tz_abbreviation_map.get(timezone, timezone)
     local_time = datetime.now(pytz.timezone(timezone))
 
+    snow_depth = values["snow_depth"]
     conditions = [
         f"Temperature: {round(values['temperature_2m'])}{units['temperature_2m']}",
         f"Weather condition: {weather_codes.get(values['weather_code'], 'Unknown')}",
@@ -178,7 +198,7 @@ def get_weather(
         *describe_sun_and_moon(latitude, longitude, cloud_cover),
         describe_clouds(cloud_cover),
         describe_wind(values["wind_speed_10m"]),
-        describe_snow(values["snow_depth"]),
+        describe_ground(soil_moisture, recent_rain, snow_depth),
     ]
 
     return {"status": "\n".join(filter(None, conditions))}
