@@ -1,7 +1,7 @@
 import math
 import textwrap
 from datetime import datetime, timezone
-from typing import Dict, List
+from typing import Any
 
 import ephem
 import pytz
@@ -56,7 +56,7 @@ weather_codes = {
 
 def describe_sun_and_moon(
     latitude: float, longitude: float, cloud_cover: float
-) -> List[str | None]:
+) -> tuple[str, str | None]:
     observer = ephem.Observer()
     observer.lat, observer.lon = str(latitude), str(longitude)
     observer.date = datetime.now(timezone.utc)
@@ -103,7 +103,7 @@ def describe_sun_and_moon(
             else:
                 moon_status = "The moon is visible in the sky."
 
-    return [sun_status, moon_status]
+    return (sun_status, moon_status)
 
 
 def describe_clouds(cloud_cover: float) -> str:
@@ -161,7 +161,7 @@ def describe_wind(wind_speed: float) -> str | None:
 @web_app.get("/current")
 def get_weather(
     latitude: float, longitude: float, timezone: str, temperature_unit: str
-) -> Dict[str, str]:
+) -> dict[str, Any]:
     import requests
 
     params = {
@@ -191,17 +191,27 @@ def get_weather(
     local_time = datetime.now(pytz.timezone(timezone))
 
     snow_depth = values["snow_depth"]
-    conditions = [
-        f"Temperature: {round(values['temperature_2m'])}{units['temperature_2m']}",
-        f"Weather condition: {weather_codes.get(values['weather_code'], 'Unknown')}",
-        f"The local time is {local_time.strftime('%H:%M')} on a {local_time.strftime('%A in %B')}.",
-        *describe_sun_and_moon(latitude, longitude, cloud_cover),
-        describe_clouds(cloud_cover),
-        describe_wind(values["wind_speed_10m"]),
-        describe_ground(soil_moisture, recent_rain, snow_depth),
-    ]
+    sun_status, moon_status = describe_sun_and_moon(latitude, longitude, cloud_cover)
 
-    return {"status": "\n".join(filter(None, conditions))}
+    result: dict[str, Any] = {
+        "temperature": round(values["temperature_2m"]),
+        "temperature_unit": units["temperature_2m"],
+        "condition": weather_codes.get(values["weather_code"], "Unknown"),
+        "local_time": local_time.strftime("%H:%M"),
+        "day_of_week": local_time.strftime("%A"),
+        "month": local_time.strftime("%B"),
+        "sun": sun_status,
+        "sky": describe_clouds(cloud_cover),
+    }
+
+    if moon_status:
+        result["moon"] = moon_status
+    if wind := describe_wind(values["wind_speed_10m"]):
+        result["wind"] = wind
+    if ground := describe_ground(soil_moisture, recent_rain, snow_depth):
+        result["ground"] = ground
+
+    return result
 
 
 @web_app.get("/privacy")
@@ -261,4 +271,5 @@ def main():
 
     api_url = "https://blixt--sol-mate-weather-api-dev.modal.run/current"
     response = requests.get(api_url, params=params)
-    print(response.json()["status"])
+    import json
+    print(json.dumps(response.json(), indent=2))
