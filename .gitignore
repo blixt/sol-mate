@@ -1,5 +1,3 @@
-/__pycache__
-/bin
-/include
-/lib
-/pyvenv.cfg
+.venv/
+__pycache__/
+.claude/
